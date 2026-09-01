@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Airbnb · Room Type Predictor</title>
+  <meta name="description" content="Predict whether an NYC Airbnb listing is an entire home, private room, or shared room using machine learning." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Tokens ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:      hsl(222, 28%, 8%);
+      --bg-card:      hsl(222, 22%, 12%);
+      --bg-card-alt:  hsl(222, 20%, 15%);
+      --bg-input:     hsl(222, 18%, 11%);
+      --bg-hover:     hsl(222, 20%, 18%);
+      --border:       hsl(222, 18%, 22%);
+      --border-focus: hsl(42, 95%, 60%);
+      --accent:       hsl(42, 95%, 55%);
+      --accent-dim:   hsl(42, 80%, 45%);
+      --accent-glow:  hsla(42, 95%, 55%, 0.25);
+      --teal:         hsl(168, 75%, 45%);
+      --teal-dim:     hsl(168, 60%, 35%);
+      --text-bright:  hsl(210, 40%, 96%);
+      --text-mid:     hsl(215, 20%, 65%);
+      --text-muted:   hsl(215, 14%, 42%);
+      --label:        hsl(215, 18%, 55%);
+      --success:      hsl(168, 75%, 45%);
+      --danger:       hsl(0, 72%, 60%);
+      --card-radius:  14px;
+      --input-radius: 8px;
+      --transition:   0.2s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-bright);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ── Background Skyline ── */
+    .bg-skyline {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: url('C:/Users/KIIT0001/.gemini/antigravity/brain/b3716a1d-df39-47e5-a1f0-cc19306deedd/nyc_skyline_bg_1786885801419.jpg');
+      background-size: cover;
+      background-position: center bottom;
+      background-repeat: no-repeat;
+      opacity: 0.28;
+      pointer-events: none;
+    }
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(
+        to bottom,
+        hsl(222, 28%, 8%) 0%,
+        hsla(222, 28%, 8%, 0.82) 35%,
+        hsla(222, 28%, 8%, 0.70) 60%,
+        hsl(222, 28%, 8%) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Topnav ── */
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 18px 40px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      background: hsla(222, 28%, 8%, 0.5);
+    }
+    .topnav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 6px var(--teal);
+    }
+    .topnav-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--teal);
+      font-weight: 600;
+    }
+    .topnav-sep {
+      color: var(--border);
+      margin: 0 4px;
+      font-size: 11px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 52px 40px 40px;
+      max-width: 520px;
+    }
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text-bright);
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+    .hero-title em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .hero-desc {
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+      max-width: 400px;
+    }
+
+    /* ── Main content ── */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 0 40px 60px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .topnav, .hero, .content-grid { padding-left: 20px; padding-right: 20px; }
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, hsla(222,22%,18%,0.4) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    /* Try an example button */
+    .btn-example {
+      font-size: 0.75rem;
+      color: var(--text-mid);
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: color var(--transition), border-color var(--transition), background var(--transition);
+    }
+    .btn-example:hover {
+      color: var(--text-bright);
+      border-color: var(--border-focus);
+      background: var(--bg-hover);
+    }
+
+    /* ── Form Sections ── */
+    .form-section {
+      margin-bottom: 22px;
+    }
+    .section-label {
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      opacity: 0.6;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .field-row.single { grid-template-columns: 1fr; }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field-label {
+      font-size: 11px;
+      color: var(--label);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Inputs ── */
+    .input, .select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--input-radius);
+      color: var(--text-bright);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      padding: 9px 12px;
+      width: 100%;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .input:focus, .select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input::placeholder { color: var(--text-muted); }
+    .input:hover, .select:hover { border-color: hsl(222, 18%, 30%); }
+
+    .select-wrapper {
+      position: relative;
+    }
+    .select-wrapper::after {
+      content: '▾';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 12px;
+      pointer-events: none;
+    }
+    .select {
+      padding-right: 32px;
+      cursor: pointer;
+      appearance: none;
+    }
+    .select option {
+      background: var(--bg-card);
+      color: var(--text-bright);
+    }
+
+    /* ── Spinner Input ── */
+    .spinner-wrapper {
+      position: relative;
+    }
+    .spinner-wrapper .input {
+      padding-right: 32px;
+    }
+    .spinner-btns {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+    }
+    .spinner-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 9px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color var(--transition), background var(--transition);
+      line-height: 1;
+    }
+    .spinner-btn:hover { color: var(--text-bright); background: var(--bg-hover); }
+    .spinner-btn:first-child { border-radius: 0 var(--input-radius) 0 0; border-bottom: 1px solid var(--border); }
+    .spinner-btn:last-child { border-radius: 0 0 var(--input-radius) 0; }
+
+    /* ── Range Slider ── */
+    .range-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .range-display {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .range-display span { color: var(--text-mid); font-weight: 500; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--range-pct, 100%), var(--bg-card-alt) var(--range-pct, 100%), var(--bg-card-alt) 100%);
+      outline: none;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--bg-card), 0 0 8px var(--accent-glow);
+      cursor: pointer;
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 4px var(--bg-card), 0 0 14px var(--accent-glow);
+      transform: scale(1.15);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      box-shadow: 0 0 8px var(--accent-glow);
+      cursor: pointer;
+    }
+
+    /* ── Predict Button ── */
+    .btn-predict {
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: var(--input-radius);
+      background: linear-gradient(90deg, hsl(38, 92%, 50%) 0%, hsl(42, 95%, 62%) 100%);
+      color: hsl(222, 28%, 10%);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-predict::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .btn-predict:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px hsla(42, 95%, 55%, 0.40);
+      filter: brightness(1.05);
+    }
+    .btn-predict:active {
+      transform: translateY(0);
+      box-shadow: 0 3px 12px hsla(42, 95%, 55%, 0.30);
+    }
+    .btn-predict:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Prediction Card ── */
+    .prediction-card { min-height: 320px; }
+
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--danger);
+      transition: background 0.3s;
+    }
+    .status-dot.connected { background: var(--teal); box-shadow: 0 0 5px var(--teal); }
+    .status-dot.checking {
+      background: var(--accent);
+      animation: pulse-dot 1s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .prediction-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 220px;
+      gap: 16px;
+    }
+
+    /* Cityscape animation */
+    .city-svg {
+      width: 120px;
+      opacity: 0.3;
+    }
+    .city-window {
+      fill: var(--accent);
+      opacity: 0;
+      transition: opacity 0.6s;
+    }
+    .city-window.lit { opacity: 1; }
+
+    .prediction-empty-text {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 220px;
+      line-height: 1.6;
+    }
+
+    /* Result ── */
+    .prediction-result {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeSlideIn 0.45s ease forwards;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: hsla(42, 95%, 55%, 0.12);
+      border: 1px solid hsla(42, 95%, 55%, 0.35);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.01em;
+    }
+    .result-badge-icon { font-size: 16px; }
+
+    .result-type {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .prob-bars { display: flex; flex-direction: column; gap: 10px; }
+    .prob-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .prob-row-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .prob-name { color: var(--text-mid); }
+    .prob-val { color: var(--accent); font-weight: 600; }
+    .prob-track {
+      height: 5px;
+      background: var(--bg-card-alt);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .prob-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--teal-dim), var(--teal));
+      width: 0%;
+      transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .prob-fill.accent {
+      background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    }
+
+    /* Error state */
+    .result-error {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 180px;
+      gap: 10px;
+      animation: fadeSlideIn 0.35s ease forwards;
+    }
+    .error-icon { font-size: 2rem; }
+    .error-text {
+      font-size: 0.8125rem;
+      color: var(--danger);
+      text-align: center;
+      max-width: 230px;
+      line-height: 1.6;
+    }
+    .error-detail {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 240px;
+    }
+
+    /* Loading */
+    .result-loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 180px;
+      gap: 14px;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 0.8125rem; color: var(--text-muted); }
+
+    /* ── Validation ── */
+    .input.error, .select.error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px hsla(0, 72%, 60%, 0.15);
+    }
+    .field-error {
+      font-size: 10.5px;
+      color: var(--danger);
+      display: none;
+    }
+    .field-error.visible { display: block; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <div class="bg-skyline" aria-hidden="true"></div>
+  <div class="bg-overlay" aria-hidden="true"></div>
+
+  <div class="page-wrapper">
+
+    <!-- Topnav -->
+    <nav class="topnav" aria-label="Breadcrumb">
+      <div class="topnav-dot" aria-hidden="true"></div>
+      <span class="topnav-label">NYC Airbnb</span>
+      <span class="topnav-sep" aria-hidden="true">›</span>
+      <span class="topnav-label">Room Type Predictor</span>
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero">
+      <h1 class="hero-title">What kind of <em>stay</em><br>is this listing?</h1>
+      <p class="hero-desc">
+        Enter a listing's details and the model will predict whether it's an entire home,
+        a private room, or a shared room — the way the city lights up differently behind each kind of door.
+      </p>
+    </header>
+
+    <!-- Content -->
+    <main class="content-grid">
+
+      <!-- LEFT: Form Card -->
+      <div class="card" role="form" aria-label="Listing details form">
+        <div class="card-header">
+          <h2 class="card-title">Listing details</h2>
+          <button class="btn-example" id="btn-example" type="button">Try an example</button>
+        </div>
+
+        <form id="prediction-form" novalidate>
+
+          <!-- Location -->
+          <section class="form-section">
+            <p class="section-label">Location</p>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="latitude">Latitude</label>
+                <input id="latitude" class="input" type="number" step="any" placeholder="40.7128" />
+                <span class="field-error" id="err-latitude">Must be between −90 and 90</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="longitude">Longitude</label>
+                <input id="longitude" class="input" type="number" step="any" placeholder="-74.0060" />
+                <span class="field-error" id="err-longitude">Must be between −180 and 180</span>
+              </div>
+            </div>
+            <div class="field-row" style="margin-top:12px">
+              <div class="field-group">
+                <label class="field-label" for="neighbourhood_group">Borough</label>
+                <div class="select-wrapper">
+                  <select id="neighbourhood_group" class="select">
+                    <option value="">Select borough</option>
+                    <option value="Brooklyn">Brooklyn</option>
+                    <option value="Manhattan">Manhattan</option>
+                    <option value="Queens">Queens</option>
+                    <option value="Bronx">Bronx</option>
+                    <option value="Staten Island">Staten Island</option>
+                  </select>
+                </div>
+                <span class="field-error" id="err-borough">Please select a borough</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="neighbourhood">Neighbourhood</label>
+                <input id="neighbourhood" class="input" type="text" placeholder="e.g. Williamsburg" />
+                <span class="field-error" id="err-neighbourhood">Required</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Pricing & Stay -->
+          <section class="form-section">
+            <p class="section-label">Pricing &amp; Stay</p>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="price">Price per night (USD)</label>
+                <input id="price" class="input" type="number" min="0" step="1" placeholder="150" />
+                <span class="field-error" id="err-price">Must be ≥ 0</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="minimum_nights">Minimum nights</label>
+                <input id="minimum_nights" class="input" type="number" min="1" step="1" placeholder="2" />
+                <span class="field-error" id="err-minimum-nights">Must be ≥ 1</span>
+              </div>
+            </div>
+            <div class="field-row single" style="margin-top:12px">
+              <div class="field-group">
+                <label class="field-label" for="availability_365">Days available per year</label>
+                <div class="range-wrapper">
+                  <input id="availability_365" type="range" min="0" max="365" value="365" aria-valuemin="0" aria-valuemax="365" aria-valuenow="365" />
+                  <div class="range-display"><span id="avail-display">365</span> / 365 days</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Reviews & Host -->
+          <section class="form-section">
+            <p class="section-label">Reviews &amp; Host</p>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="number_of_reviews">Total reviews</label>
+                <input id="number_of_reviews" class="input" type="number" min="0" step="1" placeholder="2" />
+                <span class="field-error" id="err-reviews">Must be ≥ 0</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="reviews_per_month">Reviews per month</label>
+                <input id="reviews_per_month" class="input" type="number" min="0" step="0.01" placeholder="1.0" />
+                <span class="field-error" id="err-rpm">Must be ≥ 0</span>
+              </div>
+            </div>
+            <div class="field-row single" style="margin-top:12px">
+              <div class="field-group">
+                <label class="field-label" for="calculated_host_listings_count">Listings by this host</label>
+                <div class="spinner-wrapper">
+                  <input id="calculated_host_listings_count" class="input" type="number" min="1" value="1" step="1" />
+                  <div class="spinner-btns" aria-hidden="true">
+                    <button class="spinner-btn" type="button" data-target="calculated_host_listings_count" data-dir="up" tabindex="-1">▲</button>
+                    <button class="spinner-btn" type="button" data-target="calculated_host_listings_count" data-dir="down" tabindex="-1">▼</button>
+                  </div>
+                </div>
+                <span class="field-error" id="err-host-listings">Must be ≥ 1</span>
+              </div>
+            </div>
+          </section>
+
+          <button class="btn-predict" id="btn-predict" type="submit">
+            Predict room type
+          </button>
+        </form>
+      </div>
+
+      <!-- RIGHT: Prediction Card -->
+      <div class="card prediction-card" aria-live="polite" aria-label="Prediction result">
+        <div class="card-header">
+          <h2 class="card-title">Prediction</h2>
+          <div class="api-status">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Not connected</span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="prediction-empty" id="state-empty">
+          <svg class="city-svg" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Buildings silhouettes -->
+            <rect x="5"  y="35" width="14" height="45" rx="1" fill="hsl(222,22%,20%)"/>
+            <rect x="7"  y="40" width="3"  height="3"  class="city-window" id="w1"/>
+            <rect x="12" y="40" width="3"  height="3"  class="city-window" id="w2"/>
+            <rect x="7"  y="46" width="3"  height="3"  class="city-window" id="w3"/>
+            <rect x="12" y="46" width="3"  height="3"  class="city-window" id="w4"/>
+            <rect x="7"  y="52" width="3"  height="3"  class="city-window" id="w5"/>
+
+            <rect x="20" y="20" width="18" height="60" rx="1" fill="hsl(222,22%,22%)"/>
+            <rect x="22" y="25" width="3"  height="3"  class="city-window" id="w6"/>
+            <rect x="27" y="25" width="3"  height="3"  class="city-window" id="w7"/>
+            <rect x="32" y="25" width="3"  height="3"  class="city-window" id="w8"/>
+            <rect x="22" y="31" width="3"  height="3"  class="city-window" id="w9"/>
+            <rect x="27" y="31" width="3"  height="3"  class="city-window" id="w10"/>
+            <rect x="32" y="31" width="3"  height="3"  class="city-window" id="w11"/>
+            <rect x="22" y="37" width="3"  height="3"  class="city-window" id="w12"/>
+            <rect x="27" y="37" width="3"  height="3"  class="city-window" id="w13"/>
+            <rect x="32" y="37" width="3"  height="3"  class="city-window" id="w14"/>
+
+            <rect x="40" y="10" width="22" height="70" rx="1" fill="hsl(222,22%,24%)"/>
+            <rect x="43" y="14" width="3"  height="3"  class="city-window" id="w15"/>
+            <rect x="48" y="14" width="3"  height="3"  class="city-window" id="w16"/>
+            <rect x="53" y="14" width="3"  height="3"  class="city-window" id="w17"/>
+            <rect x="43" y="20" width="3"  height="3"  class="city-window" id="w18"/>
+            <rect x="48" y="20" width="3"  height="3"  class="city-window" id="w19"/>
+            <rect x="53" y="20" width="3"  height="3"  class="city-window" id="w20"/>
+            <rect x="43" y="26" width="3"  height="3"  class="city-window" id="w21"/>
+            <rect x="48" y="26" width="3"  height="3"  class="city-window" id="w22"/>
+            <rect x="53" y="26" width="3"  height="3"  class="city-window" id="w23"/>
+            <rect x="43" y="32" width="3"  height="3"  class="city-window" id="w24"/>
+            <rect x="48" y="32" width="3"  height="3"  class="city-window" id="w25"/>
+            <rect x="53" y="32" width="3"  height="3"  class="city-window" id="w26"/>
+
+            <rect x="64" y="25" width="16" height="55" rx="1" fill="hsl(222,22%,21%)"/>
+            <rect x="66" y="29" width="3"  height="3"  class="city-window" id="w27"/>
+            <rect x="71" y="29" width="3"  height="3"  class="city-window" id="w28"/>
+            <rect x="66" y="35" width="3"  height="3"  class="city-window" id="w29"/>
+            <rect x="71" y="35" width="3"  height="3"  class="city-window" id="w30"/>
+            <rect x="66" y="41" width="3"  height="3"  class="city-window" id="w31"/>
+
+            <rect x="82" y="40" width="12" height="40" rx="1" fill="hsl(222,22%,19%)"/>
+            <rect x="84" y="44" width="3"  height="3"  class="city-window" id="w32"/>
+            <rect x="89" y="44" width="3"  height="3"  class="city-window" id="w33"/>
+            <rect x="84" y="50" width="3"  height="3"  class="city-window" id="w34"/>
+            <rect x="89" y="50" width="3"  height="3"  class="city-window" id="w35"/>
+
+            <rect x="96" y="30" width="18" height="50" rx="1" fill="hsl(222,22%,23%)"/>
+            <rect x="98" y="34" width="3"  height="3"  class="city-window" id="w36"/>
+            <rect x="103" y="34" width="3" height="3"  class="city-window" id="w37"/>
+            <rect x="109" y="34" width="3" height="3"  class="city-window" id="w38"/>
+            <rect x="98" y="40" width="3"  height="3"  class="city-window" id="w39"/>
+            <rect x="103" y="40" width="3" height="3"  class="city-window" id="w40"/>
+            <rect x="109" y="40" width="3" height="3"  class="city-window" id="w41"/>
+          </svg>
+          <p class="prediction-empty-text">Fill in the listing details and predict to see the city light up</p>
+        </div>
+
+        <!-- Loading state -->
+        <div class="result-loading" id="state-loading">
+          <div class="spinner" aria-label="Loading"></div>
+          <p class="loading-text">Reading the city…</p>
+        </div>
+
+        <!-- Error state -->
+        <div class="result-error" id="state-error">
+          <div class="error-icon" aria-hidden="true">⚡</div>
+          <p class="error-text" id="error-msg">Could not reach the prediction API.</p>
+          <p class="error-detail" id="error-detail">Make sure your FastAPI server is running at <code style="color:var(--text-mid)">http://localhost:8000</code></p>
+        </div>
+
+        <!-- Success result -->
+        <div class="prediction-result" id="state-result">
+          <div>
+            <div class="result-badge">
+              <span class="result-badge-icon" id="result-icon">🏠</span>
+              <span>Predicted Room Type</span>
+            </div>
+          </div>
+          <div class="result-type" id="result-type">—</div>
+          <div class="prob-bars" id="prob-bars"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const API_BASE = 'http://localhost:8000';
+
+    // ── DOM refs ──
+    const form      = document.getElementById('prediction-form');
+    const btnPredict= document.getElementById('btn-predict');
+    const btnExample= document.getElementById('btn-example');
+    const rangeAvail= document.getElementById('availability_365');
+    const availDisp = document.getElementById('avail-display');
+    const statusDot = document.getElementById('status-dot');
+    const statusTxt = document.getElementById('status-text');
+
+    const stateEmpty  = document.getElementById('state-empty');
+    const stateLoading= document.getElementById('state-loading');
+    const stateError  = document.getElementById('state-error');
+    const stateResult = document.getElementById('state-result');
+
+    const resultIcon  = document.getElementById('result-icon');
+    const resultType  = document.getElementById('result-type');
+    const probBars    = document.getElementById('prob-bars');
+    const errorMsg    = document.getElementById('error-msg');
+    const errorDetail = document.getElementById('error-detail');
+
+    // ── Room type labels & icons ──
+    const ROOM_LABELS = {
+      'Entire home/apt':  { label: 'Entire Home / Apartment', icon: '🏠' },
+      'Private room':     { label: 'Private Room',            icon: '🚪' },
+      'Shared room':      { label: 'Shared Room',             icon: '🛋️' },
+    };
+    const CLASS_ORDER = ['Entire home/apt', 'Private room', 'Shared room'];
+
+    // ── Range slider live fill ──
+    function updateRangeFill(el) {
+      const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+      el.style.setProperty('--range-pct', pct + '%');
+      el.setAttribute('aria-valuenow', el.value);
+    }
+    rangeAvail.addEventListener('input', () => {
+      availDisp.textContent = rangeAvail.value;
+      updateRangeFill(rangeAvail);
+    });
+    updateRangeFill(rangeAvail);
+
+    // ── Spinner buttons ──
+    document.querySelectorAll('.spinner-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        const step   = parseFloat(target.step) || 1;
+        const min    = target.min !== '' ? parseFloat(target.min) : -Infinity;
+        const max    = target.max !== '' ? parseFloat(target.max) : Infinity;
+        let val = parseFloat(target.value) || 0;
+        if (btn.dataset.dir === 'up')   val = Math.min(val + step, max);
+        if (btn.dataset.dir === 'down') val = Math.max(val - step, min);
+        target.value = val;
+        target.dispatchEvent(new Event('input'));
+      });
+    });
+
+    // ── Example data ──
+    const EXAMPLES = [
+      {
+        latitude: 40.7128, longitude: -74.0060,
+        neighbourhood_group: 'Manhattan', neighbourhood: 'Midtown',
+        price: 220, minimum_nights: 2,
+        availability_365: 280, number_of_reviews: 45,
+        reviews_per_month: 1.8, calculated_host_listings_count: 1
+      },
+      {
+        latitude: 40.6782, longitude: -73.9442,
+        neighbourhood_group: 'Brooklyn', neighbourhood: 'Williamsburg',
+        price: 150, minimum_nights: 2,
+        availability_365: 365, number_of_reviews: 2,
+        reviews_per_month: 1.0, calculated_host_listings_count: 1
+      },
+      {
+        latitude: 40.7282, longitude: -73.7949,
+        neighbourhood_group: 'Queens', neighbourhood: 'Flushing',
+        price: 75, minimum_nights: 1,
+        availability_365: 120, number_of_reviews: 12,
+        reviews_per_month: 0.5, calculated_host_listings_count: 3
+      }
+    ];
+    let exIdx = 0;
+
+    btnExample.addEventListener('click', () => {
+      const ex = EXAMPLES[exIdx % EXAMPLES.length];
+      exIdx++;
+      document.getElementById('latitude').value                       = ex.latitude;
+      document.getElementById('longitude').value                      = ex.longitude;
+      document.getElementById('neighbourhood_group').value            = ex.neighbourhood_group;
+      document.getElementById('neighbourhood').value                  = ex.neighbourhood;
+      document.getElementById('price').value                          = ex.price;
+      document.getElementById('minimum_nights').value                 = ex.minimum_nights;
+      rangeAvail.value                                                 = ex.availability_365;
+      availDisp.textContent                                            = ex.availability_365;
+      updateRangeFill(rangeAvail);
+      document.getElementById('number_of_reviews').value              = ex.number_of_reviews;
+      document.getElementById('reviews_per_month').value              = ex.reviews_per_month;
+      document.getElementById('calculated_host_listings_count').value = ex.calculated_host_listings_count;
+      clearAllErrors();
+    });
+
+    // ── Validation ──
+    function showError(inputEl, errEl) {
+      inputEl.classList.add('error');
+      errEl.classList.add('visible');
+    }
+    function clearError(inputEl, errEl) {
+      inputEl.classList.remove('error');
+      errEl.classList.remove('visible');
+    }
+    function clearAllErrors() {
+      document.querySelectorAll('.input.error, .select.error').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.field-error.visible').forEach(el => el.classList.remove('visible'));
+    }
+
+    function validateForm() {
+      let valid = true;
+
+      const lat = parseFloat(document.getElementById('latitude').value);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        showError(document.getElementById('latitude'), document.getElementById('err-latitude'));
+        valid = false;
+      } else clearError(document.getElementById('latitude'), document.getElementById('err-latitude'));
+
+      const lon = parseFloat(document.getElementById('longitude').value);
+      if (isNaN(lon) || lon < -180 || lon > 180) {
+        showError(document.getElementById('longitude'), document.getElementById('err-longitude'));
+        valid = false;
+      } else clearError(document.getElementById('longitude'), document.getElementById('err-longitude'));
+
+      const ng = document.getElementById('neighbourhood_group').value;
+      if (!ng) {
+        showError(document.getElementById('neighbourhood_group'), document.getElementById('err-borough'));
+        valid = false;
+      } else clearError(document.getElementById('neighbourhood_group'), document.getElementById('err-borough'));
+
+      const nb = document.getElementById('neighbourhood').value.trim();
+      if (!nb) {
+        showError(document.getElementById('neighbourhood'), document.getElementById('err-neighbourhood'));
+        valid = false;
+      } else clearError(document.getElementById('neighbourhood'), document.getElementById('err-neighbourhood'));
+
+      const price = parseFloat(document.getElementById('price').value);
+      if (isNaN(price) || price < 0) {
+        showError(document.getElementById('price'), document.getElementById('err-price'));
+        valid = false;
+      } else clearError(document.getElementById('price'), document.getElementById('err-price'));
+
+      const mn = parseInt(document.getElementById('minimum_nights').value);
+      if (isNaN(mn) || mn < 1) {
+        showError(document.getElementById('minimum_nights'), document.getElementById('err-minimum-nights'));
+        valid = false;
+      } else clearError(document.getElementById('minimum_nights'), document.getElementById('err-minimum-nights'));
+
+      const nr = parseInt(document.getElementById('number_of_reviews').value);
+      if (isNaN(nr) || nr < 0) {
+        showError(document.getElementById('number_of_reviews'), document.getElementById('err-reviews'));
+        valid = false;
+      } else clearError(document.getElementById('number_of_reviews'), document.getElementById('err-reviews'));
+
+      const rpm = parseFloat(document.getElementById('reviews_per_month').value);
+      if (isNaN(rpm) || rpm < 0) {
+        showError(document.getElementById('reviews_per_month'), document.getElementById('err-rpm'));
+        valid = false;
+      } else clearError(document.getElementById('reviews_per_month'), document.getElementById('err-rpm'));
+
+      const hc = parseInt(document.getElementById('calculated_host_listings_count').value);
+      if (isNaN(hc) || hc < 1) {
+        showError(document.getElementById('calculated_host_listings_count'), document.getElementById('err-host-listings'));
+        valid = false;
+      } else clearError(document.getElementById('calculated_host_listings_count'), document.getElementById('err-host-listings'));
+
+      return valid;
+    }
+
+    // ── State switching ──
+    function setState(state) {
+      stateEmpty.style.display   = state === 'empty'   ? 'flex'  : 'none';
+      stateLoading.style.display = state === 'loading' ? 'flex'  : 'none';
+      stateError.style.display   = state === 'error'   ? 'flex'  : 'none';
+      stateResult.style.display  = state === 'result'  ? 'flex'  : 'none';
+    }
+
+    // ── City windows animation ──
+    function lightUpCity() {
+      const windows = document.querySelectorAll('.city-window');
+      windows.forEach(w => w.classList.remove('lit'));
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= windows.length) { clearInterval(interval); return; }
+        windows[i].classList.add('lit');
+        i++;
+      }, 40);
+    }
+
+    // ── Render result ──
+    function renderResult(prediction, probabilities) {
+      const rawType = prediction[0];
+      const info    = ROOM_LABELS[rawType] || { label: rawType, icon: '🏠' };
+
+      resultIcon.textContent = info.icon;
+      resultType.textContent = info.label;
+
+      // Build probability bars
+      probBars.innerHTML = '';
+      let maxIdx = 0;
+      probabilities[0].forEach((v, i) => { if (v > probabilities[0][maxIdx]) maxIdx = i; });
+
+      CLASS_ORDER.forEach((cls, i) => {
+        const prob = probabilities[0][i] ?? 0;
+        const pct  = (prob * 100).toFixed(1);
+        const isTop= cls === rawType;
+
+        const div = document.createElement('div');
+        div.className = 'prob-row';
+        div.innerHTML = `
+          <div class="prob-row-header">
+            <span class="prob-name">${(ROOM_LABELS[cls]?.label) ?? cls}</span>
+            <span class="prob-val">${pct}%</span>
+          </div>
+          <div class="prob-track">
+            <div class="prob-fill${isTop ? ' accent' : ''}" style="width:0%" data-pct="${prob * 100}"></div>
+          </div>`;
+        probBars.appendChild(div);
+      });
+
+      setState('result');
+
+      // Animate bars after paint
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.prob-fill').forEach(el => {
+            el.style.width = el.dataset.pct + '%';
+          });
+        });
+      });
+
+      lightUpCity();
+    }
+
+    // ── API health check ──
+    async function checkApiStatus() {
+      statusDot.className = 'status-dot checking';
+      statusTxt.textContent = 'Checking…';
+      try {
+        const res = await fetch(`${API_BASE}/`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          statusDot.className = 'status-dot connected';
+          statusTxt.textContent = 'API connected';
+        } else {
+          throw new Error('Non-OK response');
+        }
+      } catch {
+        statusDot.className = 'status-dot';
+        statusTxt.textContent = 'API offline';
+      }
+    }
+
+    // ── Submit ──
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validateForm()) return;
+
+      setState('loading');
+      btnPredict.disabled = true;
+
+      const payload = {
+        latitude:                          parseFloat(document.getElementById('latitude').value),
+        longitude:                         parseFloat(document.getElementById('longitude').value),
+        neighbourhood_group:               document.getElementById('neighbourhood_group').value,
+        neighbourhood:                     document.getElementById('neighbourhood').value.trim(),
+        price:                             parseFloat(document.getElementById('price').value),
+        minimum_nights:                    parseInt(document.getElementById('minimum_nights').value),
+        number_of_reviews:                 parseInt(document.getElementById('number_of_reviews').value),
+        reviews_per_month:                 parseFloat(document.getElementById('reviews_per_month').value),
+        calculated_host_listings_count:    parseInt(document.getElementById('calculated_host_listings_count').value),
+        availability_365:                  parseInt(rangeAvail.value),
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/predict`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+          signal:  AbortSignal.timeout(10000),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.detail?.[0]?.msg ?? `Server error ${res.status}`);
+        }
+
+        const data = await res.json();
+        statusDot.className = 'status-dot connected';
+        statusTxt.textContent = 'API connected';
+        renderResult(data.Predicted_room_type, data.Probability);
+
+      } catch (err) {
+        setState('error');
+        if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+          errorMsg.textContent    = 'Request timed out.';
+          errorDetail.innerHTML   = 'The API did not respond in time. Is it running?';
+        } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+          errorMsg.textContent    = 'Could not reach the prediction API.';
+          errorDetail.innerHTML   = 'Make sure your FastAPI server is running at <code style="color:var(--text-mid)">http://localhost:8000</code>';
+        } else {
+          errorMsg.textContent    = err.message || 'An unexpected error occurred.';
+          errorDetail.innerHTML   = 'Check the console for more details.';
+        }
+        statusDot.className = 'status-dot';
+        statusTxt.textContent = 'API offline';
+      } finally {
+        btnPredict.disabled = false;
+      }
+    });
+
+    // ── Init ──
+    setState('empty');
+    checkApiStatus();
+  })();
+  </script>
+</body>
+</html>
