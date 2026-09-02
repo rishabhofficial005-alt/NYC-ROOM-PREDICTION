@@ -1,121 +1,135 @@
-🏙️ NYC Airbnb Room Type Predictor
+# 🏙️ NYC Airbnb Room Type Predictor
 
-An end-to-end Machine Learning classification application that predicts the room type of an Airbnb listing in New York City using listing, location, pricing, review, host, and availability information.
+An end-to-end **Machine Learning classification application** that predicts the room type of an Airbnb listing in New York City based on listing, location, pricing, review, host, and availability information.
 
-The project takes a trained Machine Learning pipeline and turns it into a usable web application through FastAPI, a custom HTML/CSS/JavaScript frontend, and Render deployment.
+The project takes a trained Machine Learning pipeline and deploys it as an interactive web application using **FastAPI, HTML, CSS, JavaScript, and Render**.
 
-🌐 Live Demo
+🔗 **Live Demo:** https://nyc-room-prediction-1-dfwq.onrender.com
 
-🚀 Live Application:
-https://nyc-room-prediction-1-dfwq.onrender.com
+---
 
-The application allows users to enter Airbnb listing details and receive:
+## 📌 Project Overview
 
-Predicted room type
+The **NYC Airbnb Room Type Predictor** classifies Airbnb listings into one of three room categories:
 
-Class probabilities
+* 🏠 **Entire Home / Apartment**
+* 🚪 **Private Room**
+* 🛋️ **Shared Room**
 
-API connection status
+The application accepts listing information through a web interface, sends the data to a FastAPI backend, processes it through the trained ML pipeline, and returns the predicted room type along with class probabilities.
 
-Input validation and error feedback
+### End-to-End Architecture
 
-🎯 Problem Statement
+```text
+NYC Airbnb Dataset
+        ↓
+Exploratory Data Analysis
+        ↓
+Data Preprocessing
+        ↓
+Feature Engineering
+        ↓
+Model Training
+        ↓
+Randomized Hyperparameter Search
+        ↓
+Random Forest Classifier
+        ↓
+Model Evaluation
+        ↓
+Joblib Model Serialization
+        ↓
+FastAPI REST API
+        ↓
+HTML / CSS / JavaScript Frontend
+        ↓
+Render Deployment
+```
 
-The objective is to classify an Airbnb listing into one of three room-type categories:
+---
 
-🏠 Entire Home / Apartment
+## 🎯 Problem Statement
 
-🚪 Private Room
+Airbnb listings contain multiple characteristics such as price, location, availability, reviews, and host information.
 
-🛋️ Shared Room
+The objective of this project is to build a supervised Machine Learning classification system capable of predicting the **room type** of an Airbnb listing using these attributes.
 
-The model uses information available from an Airbnb listing to learn patterns associated with these room types.
+This project demonstrates the complete process of taking a Machine Learning model from **data analysis and experimentation to production-style deployment**.
 
-📊 Dataset
+---
 
-This project uses the New York City Airbnb Open Data dataset.
+## 📊 Dataset
 
-Dataset:
+The project uses the **New York City Airbnb Open Data** dataset.
 
-AB_NYC_2019.csv
+**Dataset:** `AB_NYC_2019.csv`
 
 The dataset contains:
 
-48,895 rows
-16 columns
+* **48,895 records**
+* **16 columns**
 
-The original dataset includes listing information such as:
+Important attributes include:
 
-Listing ID
+| Feature                          | Description                        |
+| -------------------------------- | ---------------------------------- |
+| `id`                             | Unique listing identifier          |
+| `name`                           | Listing name                       |
+| `host_id`                        | Host identifier                    |
+| `host_name`                      | Host name                          |
+| `neighbourhood_group`            | NYC borough                        |
+| `neighbourhood`                  | NYC neighbourhood                  |
+| `latitude`                       | Listing latitude                   |
+| `longitude`                      | Listing longitude                  |
+| `room_type`                      | Target variable                    |
+| `price`                          | Price per night                    |
+| `minimum_nights`                 | Minimum number of nights           |
+| `number_of_reviews`              | Total number of reviews            |
+| `last_review`                    | Date of latest review              |
+| `reviews_per_month`              | Average monthly reviews            |
+| `calculated_host_listings_count` | Number of listings managed by host |
+| `availability_365`               | Number of available days per year  |
 
-Listing name
+---
 
-Host information
+## 🔍 Exploratory Data Analysis
 
-Neighbourhood group
-
-Neighbourhood
-
-Latitude
-
-Longitude
-
-Room type
-
-Price
-
-Minimum nights
-
-Number of reviews
-
-Last review
-
-Reviews per month
-
-Host listing count
-
-Availability over 365 days
-
-The notebook loads the New York City Airbnb dataset and confirms a shape of (48895, 16).
-
-🔍 Exploratory Data Analysis
-
-The notebook performs exploratory analysis before model training.
+Before model training, the dataset was extensively analyzed to understand its structure and identify patterns.
 
 The analysis includes:
 
-Dataset structure
+* Dataset structure and dimensions
+* Data types
+* Descriptive statistics
+* Missing-value analysis
+* Target-class distribution
+* Numerical feature analysis
+* Categorical feature analysis
+* Feature relationships
+* Correlation analysis
+* Class imbalance investigation
 
-Data types
+### Target Classes
 
-Descriptive statistics
+The target variable contains three classes:
 
-Missing-value inspection
-
-Room-type distribution
-
-Numerical feature analysis
-
-Categorical feature analysis
-
-Feature relationships
-
-Correlation analysis
-
-The dataset contains three target classes:
-
+```text
 Entire home/apt
 Private room
 Shared room
+```
 
-🧹 Data Preparation
+---
 
-The project builds a preprocessing pipeline so that the same transformations used during training are automatically applied during inference.
+## 🧹 Data Preprocessing
 
-Numerical Features
+A unified **Scikit-learn preprocessing pipeline** was created to ensure that the same transformations applied during training are automatically applied during prediction.
 
-The final numerical feature set contains:
+### Numerical Features
 
+The final numerical features are:
+
+```text
 price
 minimum_nights
 number_of_reviews
@@ -124,73 +138,99 @@ calculated_host_listings_count
 availability_365
 longitude
 latitude
+```
 
-Numerical preprocessing:
+### Numerical Pipeline
 
+```text
 Numerical Features
-       ↓
+        ↓
 Median Imputation
-       ↓
+        ↓
 StandardScaler
+```
 
-Categorical Features
+The numerical pipeline uses:
 
-The categorical feature set contains:
+* `SimpleImputer(strategy="median")`
+* `StandardScaler()`
 
+### Categorical Features
+
+The categorical features are:
+
+```text
 neighbourhood_group
 neighbourhood
+```
 
-Categorical preprocessing:
+### Categorical Pipeline
 
+```text
 Categorical Features
-       ↓
+        ↓
 Most-Frequent Imputation
-       ↓
+        ↓
 OneHotEncoder
-       ↓
+        ↓
 handle_unknown="ignore"
+```
 
-The notebook uses a ColumnTransformer to combine these preprocessing pipelines.
+The categorical pipeline uses:
 
-🤖 Machine Learning Model
+* `SimpleImputer(strategy="most_frequent")`
+* `OneHotEncoder(handle_unknown="ignore")`
 
-The project evaluates classification algorithms and uses a Random Forest Classifier as the final model.
+A `ColumnTransformer` combines both pipelines into a single preprocessing workflow.
 
-The final pipeline consists of:
+---
 
-Input Data
+## 🤖 Machine Learning Model
+
+Several classification approaches were evaluated during experimentation, with **Random Forest Classifier** selected as the final model.
+
+### Final Pipeline
+
+```text
+Raw Input
     ↓
 ColumnTransformer
     ├── Numerical Pipeline
-    │      ├── SimpleImputer(strategy="median")
-    │      └── StandardScaler()
+    │     ├── Median Imputation
+    │     └── StandardScaler
     │
     └── Categorical Pipeline
-           ├── SimpleImputer(strategy="most_frequent")
-           └── OneHotEncoder(handle_unknown="ignore")
+          ├── Most-Frequent Imputation
+          └── OneHotEncoder
     ↓
-RandomForestClassifier
+Random Forest Classifier
     ↓
-Prediction + Probability
+Prediction + Class Probabilities
+```
 
-⚙️ Hyperparameter Tuning
+---
 
-The Random Forest model was optimized using RandomizedSearchCV.
+## ⚙️ Hyperparameter Tuning
 
-The search explored:
+The Random Forest model was optimized using **RandomizedSearchCV**.
 
-n_estimators
-max_depth
-min_samples_split
+The search explored parameters including:
 
-The search was performed using:
+* `n_estimators`
+* `max_depth`
+* `min_samples_split`
 
+Configuration:
+
+```text
 n_iter = 10
 cv = 3
 scoring = f1_macro
+```
 
-The selected configuration was:
+### Final Model Configuration
 
+```python
 RandomForestClassifier(
     n_estimators=200,
     max_depth=None,
@@ -198,72 +238,84 @@ RandomForestClassifier(
     class_weight="balanced",
     random_state=42
 )
+```
 
-The notebook confirms these final parameters.
+---
 
-📈 Model Performance
+## 🛡️ Handling Class Imbalance
 
-The final trained pipeline achieved:
+The three room-type classes are not equally represented in the dataset.
 
-Metric
+To reduce the impact of class imbalance, the final Random Forest model uses:
 
-Score
-
-Accuracy
-
-85.7%
-
-Macro F1-Score
-
-75.8%
-
-The model was evaluated on a held-out test set, and a confusion matrix was used to inspect class-wise performance.
-
-Accuracy: 0.857
-F1-Score: 0.758
-
-🛡️ Handling Class Imbalance
-
-The target classes are not equally represented.
-
-To reduce the effect of class imbalance, the final Random Forest classifier uses:
-
+```python
 class_weight="balanced"
+```
 
-This gives relatively greater importance to underrepresented classes during training.
+This assigns greater importance to underrepresented classes during model training.
 
-💾 Model Serialization
+---
 
-The complete trained pipeline is serialized using Joblib:
+## 📈 Model Performance
 
+The final model was evaluated on a held-out test dataset.
+
+| Metric             |     Score |
+| ------------------ | --------: |
+| **Accuracy**       | **85.7%** |
+| **Macro F1-Score** | **75.8%** |
+
+### Evaluation
+
+The model evaluation includes:
+
+* Accuracy
+* Macro F1-score
+* Confusion matrix
+* Class-wise prediction analysis
+* Probability-based predictions
+
+The use of **Macro F1-score** is particularly important because it evaluates performance across all classes rather than allowing the majority class to dominate the metric.
+
+---
+
+## 💾 Model Serialization
+
+The complete preprocessing and Machine Learning pipeline is serialized using **Joblib**.
+
+```text
 Model_Classification.pkl
+```
 
-The saved artifact contains the preprocessing pipeline and the trained Random Forest model.
+The saved artifact contains:
 
-This allows the production API to receive raw listing information and run the same preprocessing automatically before inference.
+* Numerical preprocessing
+* Categorical preprocessing
+* Feature transformation
+* Trained Random Forest model
 
-⚡ FastAPI Backend
+This allows the API to receive raw user inputs without requiring the frontend to reproduce the training transformations.
 
-The Machine Learning model is exposed through a FastAPI REST API.
+---
 
-The backend:
+# ⚡ FastAPI Backend
 
-Receives listing information
+The trained model is exposed through a **FastAPI REST API**.
 
-Validates the input with Pydantic
+The backend performs the following operations:
 
-Converts the input into a Pandas DataFrame
+1. Receives listing information
+2. Validates input using Pydantic
+3. Converts the request into a Pandas DataFrame
+4. Loads the serialized ML pipeline
+5. Performs preprocessing
+6. Generates the prediction
+7. Calculates class probabilities
+8. Returns a JSON response
 
-Loads the trained ML pipeline
+### API Architecture
 
-Generates the prediction
-
-Generates class probabilities
-
-Returns a JSON response
-
-API flow
-
+```text
 Client
   ↓
 POST /predict
@@ -279,31 +331,35 @@ Random Forest
 Prediction + Probability
   ↓
 JSON Response
+```
 
-🔌 API Endpoints
+---
 
-Home
+## 🔌 API Endpoints
 
-GET /
+### `GET /`
 
-The root endpoint serves the web application.
+Serves the web application frontend.
 
-Health Check
+### `GET /health`
 
-GET /health
+Returns the API health status.
 
-Example:
+Example response:
 
+```json
 {
   "status": "healthy"
 }
+```
 
-Prediction
+### `POST /predict`
 
-POST /predict
+Accepts Airbnb listing information and returns a room-type prediction.
 
-Request Body
+#### Request
 
+```json
 {
   "latitude": 40.7128,
   "longitude": -74.0060,
@@ -316,9 +372,11 @@ Request Body
   "neighbourhood_group": "Manhattan",
   "neighbourhood": "Midtown"
 }
+```
 
-Response
+#### Response
 
+```json
 {
   "Predicted_room_type": [
     "Entire home/apt"
@@ -331,97 +389,116 @@ Response
     ]
   ]
 }
+```
 
-🌐 Frontend
+---
 
-The frontend is implemented using:
+## 🔐 Input Validation
 
-HTML5
+The API uses **Pydantic** to validate incoming requests before they reach the Machine Learning model.
 
-CSS3
+Examples of validation rules:
 
-JavaScript
+| Input          | Validation                 |
+| -------------- | -------------------------- |
+| Latitude       | Between -90 and 90         |
+| Longitude      | Between -180 and 180       |
+| Price          | Greater than or equal to 0 |
+| Minimum Nights | Greater than or equal to 0 |
+| Availability   | 0–365                      |
+| Reviews        | Greater than or equal to 0 |
+| Borough        | Required                   |
+| Neighbourhood  | Required                   |
 
-The application provides an interactive interface for submitting Airbnb listing information.
+Invalid requests are rejected before model inference.
 
-Input Sections
+---
 
-Location
+# 🌐 Frontend
 
-Latitude
+The frontend is built using:
 
-Longitude
+* **HTML5**
+* **CSS3**
+* **JavaScript**
 
-Borough
+It provides a simple interactive interface for submitting Airbnb listing information and displaying the prediction.
 
-Neighbourhood
+### Input Sections
 
-Pricing & Stay
+#### 📍 Location
 
-Price per night
+* Latitude
+* Longitude
+* Borough
+* Neighbourhood
 
-Minimum nights
+#### 💰 Pricing & Stay
 
-Days available per year
+* Price per night
+* Minimum nights
+* Availability per year
 
-Reviews & Host
+#### ⭐ Reviews & Host
 
-Total reviews
+* Total reviews
+* Reviews per month
+* Host listing count
 
-Reviews per month
+---
 
-Listings managed by the host
+## ✨ Frontend Features
 
-✨ Frontend Features
+* 🎯 Interactive prediction form
+* ✅ Client-side input validation
+* 🧪 Try Example functionality
+* 🔄 Loading state
+* 🟢 API connection indicator
+* ⚡ Error handling
+* 🏠 Human-readable predictions
+* 📊 Probability visualization
+* 🌃 NYC-themed interface
+* 📱 Responsive design
 
-🎯 Interactive prediction form
+### Model Class Mapping
 
-✅ Client-side input validation
+| Model Output      | Display Label           |
+| ----------------- | ----------------------- |
+| `Entire home/apt` | Entire Home / Apartment |
+| `Private room`    | Private Room            |
+| `Shared room`     | Shared Room             |
 
-🧪 "Try an example" functionality
+---
 
-🔄 Loading state
+# ☁️ Deployment
 
-🟢 API connection indicator
+The application is deployed on **Render**.
 
-⚡ Error handling
+### Production Architecture
 
-🏠 Human-readable room-type labels
-
-📊 Probability bars
-
-🌃 NYC-themed interface
-
-📱 Responsive layout
-
-The interface maps the model classes to:
-
-Entire home/apt → Entire Home / Apartment
-Private room   → Private Room
-Shared room    → Shared Room
-
-☁️ Deployment
-
-The application is deployed on Render.
-
-Production Architecture
-
+```text
 GitHub Repository
-        ↓
-      Render
-        ↓
-    FastAPI App
-        ↓
+       ↓
+     Render
+       ↓
+   FastAPI App
+       ↓
 Model_Classification.pkl
-        ↓
+       ↓
 Interactive Frontend
+```
 
-Live URL
+### 🚀 Live Application
 
-https://nyc-room-prediction-1-dfwq.onrender.com
+**https://nyc-room-prediction-1-dfwq.onrender.com**
 
-📂 Project Structure
+The deployed application provides a complete end-to-end workflow from user input to Machine Learning prediction.
 
+---
+
+# 📂 Project Structure
+
+```text
 NYC-Room-Prediction/
 │
 ├── main.py
@@ -433,140 +510,130 @@ NYC-Room-Prediction/
 │
 └── assets/
     └── nyc_skyline_bg.jpg
+```
 
-File Description
+### File Descriptions
 
-File
+| File                       | Description                                               |
+| -------------------------- | --------------------------------------------------------- |
+| `Untitled3.ipynb`          | EDA, preprocessing, model training, tuning and evaluation |
+| `Model_Classification.pkl` | Serialized preprocessing + Random Forest pipeline         |
+| `main.py`                  | FastAPI backend and API endpoints                         |
+| `index.html`               | Interactive frontend                                      |
+| `requirements.txt`         | Python dependencies                                       |
+| `.gitattributes`           | Git LFS configuration                                     |
+| `assets/`                  | Frontend assets                                           |
 
-Description
+---
 
-Untitled3.ipynb
+# 🛠️ Tech Stack
 
-Data analysis, preprocessing, model training, tuning and evaluation
+### Programming
 
-Model_Classification.pkl
+* Python
+* JavaScript
 
-Serialized preprocessing + Random Forest pipeline
+### Data Science
 
-main.py
+* NumPy
+* Pandas
+* Matplotlib
+* Seaborn
 
-FastAPI backend and API endpoints
+### Machine Learning
 
-index.html
+* Scikit-learn
+* Random Forest
+* RandomizedSearchCV
+* Joblib
 
-Interactive web frontend
+### Backend
 
-requirements.txt
+* FastAPI
+* Pydantic
+* Uvicorn
 
-Python dependencies
+### Frontend
 
-.gitattributes
+* HTML5
+* CSS3
+* JavaScript
 
-Git LFS configuration
+### Deployment & Version Control
 
-assets/
+* Git
+* GitHub
+* Git LFS
+* Render
 
-Frontend assets
+---
 
-🛠️ Tech Stack
+# 📦 Installation
 
-Programming
+## 1. Clone the Repository
 
-Python
-
-JavaScript
-
-Data Science
-
-NumPy
-
-Pandas
-
-Matplotlib
-
-Seaborn
-
-Machine Learning
-
-Scikit-learn
-
-Random Forest
-
-RandomizedSearchCV
-
-Joblib
-
-Backend
-
-FastAPI
-
-Pydantic
-
-Uvicorn
-
-Frontend
-
-HTML5
-
-CSS3
-
-JavaScript
-
-Deployment
-
-Git
-
-GitHub
-
-Git LFS
-
-Render
-
-📦 Installation
-
-1. Clone the Repository
-
+```bash
 git clone https://github.com/your-username/NYC-Room-Prediction.git
 cd NYC-Room-Prediction
+```
 
-2. Create a Virtual Environment
+## 2. Create a Virtual Environment
 
-Windows
+### Windows
 
+```bash
 python -m venv venv
 venv\Scripts\activate
+```
 
-macOS / Linux
+### macOS / Linux
 
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
 
-3. Install Dependencies
+## 3. Install Dependencies
 
+```bash
 pip install -r requirements.txt
+```
 
-▶️ Run Locally
+---
 
-Start the FastAPI server:
+# ▶️ Run Locally
 
+Start the FastAPI development server:
+
+```bash
 uvicorn main:app --reload
+```
 
-Open:
+The application will be available at:
 
+```text
 http://localhost:8000
+```
 
-FastAPI interactive documentation:
+### FastAPI Interactive Documentation
 
+```text
 http://localhost:8000/docs
+```
 
-Health check:
+### Health Check
 
+```text
 http://localhost:8000/health
+```
 
-📋 Requirements
+---
 
-The production environment uses pinned versions for the main dependencies:
+# 📋 Requirements
 
+The production environment uses pinned versions for the primary dependencies:
+
+```text
 fastapi==0.136.1
 uvicorn==0.46.0
 pandas==2.2.3
@@ -574,67 +641,67 @@ numpy==1.26.4
 scikit-learn==1.6.0
 joblib==1.4.2
 pydantic==2.13.3
+```
 
-Pinning the Machine Learning dependencies is especially important because the serialized .pkl model was created using the scikit-learn ecosystem.
+Pinning Machine Learning dependencies helps maintain compatibility between the environment used to create the serialized model and the environment used for inference.
 
-🧪 Example Input
+---
 
-A sample listing can be populated from the frontend using the example button.
+# 🧪 Example Prediction
 
-Example:
+Example listing:
 
-Latitude: 40.7128
-Longitude: -74.0060
-Borough: Manhattan
-Neighbourhood: Midtown
+```text
+Latitude:                 40.7128
+Longitude:                -74.0060
+Borough:                  Manhattan
+Neighbourhood:            Midtown
 
-Price: $220
-Minimum Nights: 2
-Availability: 280 days
+Price:                    $220
+Minimum Nights:           2
+Availability:             280 days
 
-Total Reviews: 45
-Reviews Per Month: 1.8
-Host Listings: 1
+Total Reviews:            45
+Reviews Per Month:        1.8
+Host Listings:            1
+```
 
-The application then sends the values to:
+The frontend sends this information to:
 
+```text
 POST /predict
+```
 
-and displays the predicted room type and probabilities.
+The API processes the input through the trained pipeline and returns:
 
-🔐 Input Validation
+```text
+Predicted Room Type
++
+Class Probabilities
+```
 
-The API validates incoming data using Pydantic.
+---
 
-Examples:
+# 🔄 Complete Project Workflow
 
-Latitude          → -90 to 90
-Longitude         → -180 to 180
-Price             → >= 0
-Availability      → 0 to 365
-Reviews           → >= 0
-Neighbourhood     → Required
-Borough           → Required
-
-Invalid requests are rejected before reaching the Machine Learning model.
-
-🔄 End-to-End Workflow
-
-NYC Airbnb Dataset
+```text
+AB_NYC_2019 Dataset
+        ↓
+Data Cleaning
         ↓
 Exploratory Data Analysis
         ↓
-Data Preprocessing
+Feature Selection
         ↓
-Feature Transformation
+Numerical & Categorical Preprocessing
         ↓
-Model Training
+Train/Test Split
         ↓
 Model Comparison
         ↓
-Randomized Hyperparameter Search
+RandomizedSearchCV
         ↓
-Final Random Forest
+Optimized Random Forest
         ↓
 Model Evaluation
         ↓
@@ -642,104 +709,87 @@ Joblib Serialization
         ↓
 FastAPI REST API
         ↓
-HTML / CSS / JavaScript Frontend
+Pydantic Validation
+        ↓
+HTML/CSS/JavaScript Frontend
         ↓
 Render Deployment
+```
 
-🚀 Future Improvements
+---
 
-Possible improvements include:
+# 🚀 Future Improvements
 
-Add automated CI/CD with GitHub Actions
+Potential improvements include:
 
-Containerize the application using Docker
+* [ ] Automated CI/CD using GitHub Actions
+* [ ] Docker containerization
+* [ ] Automated model retraining
+* [ ] MLflow experiment tracking
+* [ ] SHAP-based model explainability
+* [ ] Model performance monitoring
+* [ ] Automated unit and integration tests
+* [ ] Structured application logging
+* [ ] API authentication
+* [ ] Rate limiting
+* [ ] Advanced model comparison
+* [ ] Individual prediction explainability
+* [ ] Model drift detection
 
-Add model monitoring
+---
 
-Add MLflow experiment tracking
+# 📌 Key Highlights
 
-Add SHAP-based model explainability
+* ✅ End-to-end Machine Learning classification project
+* ✅ 48,895 Airbnb records
+* ✅ Exploratory Data Analysis
+* ✅ Numerical and categorical preprocessing
+* ✅ Missing-value handling
+* ✅ Feature standardization
+* ✅ One-hot encoding
+* ✅ Class imbalance handling
+* ✅ Random Forest classification
+* ✅ Randomized hyperparameter tuning
+* ✅ **85.7% test accuracy**
+* ✅ **75.8% macro F1-score**
+* ✅ Probability-based predictions
+* ✅ Serialized Scikit-learn pipeline
+* ✅ FastAPI REST API
+* ✅ Pydantic input validation
+* ✅ Interactive frontend
+* ✅ Git LFS model storage
+* ✅ Render cloud deployment
 
-Add automated model retraining
+---
 
-Add API authentication
+# 🎓 What This Project Demonstrates
 
-Add rate limiting
+This project demonstrates practical experience across the complete Machine Learning lifecycle:
 
-Add automated tests
+**Data → Analysis → Preprocessing → Modeling → Optimization → Evaluation → Serialization → API → Frontend → Deployment**
 
-Add structured application logging
+Rather than stopping at model training, the project focuses on transforming a Machine Learning experiment into a **usable production-style application**.
 
-Add more advanced model comparison
+---
 
-Improve model explainability for individual predictions
+# 👨‍💻 Author
 
-📌 Key Highlights
-
-✅ End-to-end Machine Learning project
-
-✅ 48,895 Airbnb records
-
-✅ Exploratory Data Analysis
-
-✅ Numerical and categorical preprocessing
-
-✅ Missing-value handling
-
-✅ Standardization
-
-✅ One-hot encoding
-
-✅ Class imbalance handling
-
-✅ Random Forest classification
-
-✅ Randomized hyperparameter tuning
-
-✅ 85.7% test accuracy
-
-✅ 75.8% macro F1-score
-
-✅ Probability-based predictions
-
-✅ Serialized ML pipeline
-
-✅ FastAPI REST API
-
-✅ Pydantic validation
-
-✅ Interactive frontend
-
-✅ Git LFS for model storage
-
-✅ Render deployment
-
-👨‍💻 Author
-
-Rishabh Singh
+**Rishabh Singh**
 
 Computer Science & Machine Learning Student
 
-⭐ Project Summary
+---
 
-NYC Airbnb Room Type Predictor demonstrates how a Machine Learning model can be taken from experimentation to a production-style web application.
+# ⭐ Project Summary
 
-The project brings together:
+The **NYC Airbnb Room Type Predictor** demonstrates how Machine Learning can be integrated into a complete web application.
 
-Data Analysis
-+
-Machine Learning
-+
-Hyperparameter Tuning
-+
-Model Serialization
-+
-REST API Development
-+
-Frontend Development
-+
-Cloud Deployment
+It combines:
 
-The final application is publicly available at:
+**Data Analysis + Machine Learning + Hyperparameter Tuning + Model Serialization + REST API Development + Frontend Development + Cloud Deployment**
 
-🚀 https://nyc-room-prediction-1-dfwq.onrender.com
+### 🚀 Try the Live Application
+
+https://nyc-room-prediction-1-dfwq.onrender.com
+
+If you find this project useful, consider ⭐ **starring the repository**.
